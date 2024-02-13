@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace 'com.example.myapplication'
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         applicationId "com.example.myapplication"
         minSdk 24
-        targetSdk 33
+        targetSdk 34
         versionCode 1
         versionName "1.0"
 
@@ -46,6 +46,8 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    //2024.02.12
+    implementation("androidx.constraintlayout:constraintlayout:2.2.0-alpha13")
 
 
     //room 연결 2024.02.11
@@ -62,6 +64,9 @@ dependencies {
     implementation("androidx.work:work-runtime-ktx:2.7.0")
     //viewPager2 2024.02.11
     implementation("androidx.viewpager2:viewpager2:1.0.0")
+
+    //2024.01.13.google Location service
+    implementation 'com.google.android.gms:play-services-location:19.0.1'
 
 
 
