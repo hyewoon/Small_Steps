@@ -18,19 +18,34 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.work.Data
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
+import com.example.myapplication.MyWorkManager
 import com.example.myapplication.R
 import com.example.myapplication.databinding.FragmentDailyBinding
+import com.example.myapplication.roomDB.AppDataBase
+import com.example.myapplication.roomDB.MyData
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationResult.create
 import com.google.android.gms.location.LocationServices
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 class DailyFragment : Fragment(), SensorEventListener {
 
@@ -38,31 +53,30 @@ class DailyFragment : Fragment(), SensorEventListener {
     private lateinit var sensorManager: SensorManager
     private var stepCounterSensor: Sensor? = null
     private val ACTIVITY_RECOGNITION_REQ_CODE = 100 // Request code for activity recognition
-    private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private lateinit var locationRequest: com.google.android.gms.location.LocationRequest
-    private val LOCATION_PERMISSION_REQUEST_CODE = 1
+
+    private lateinit var db: AppDataBase
 
     //걸음 수 측정
-    var steps: Int? = 0
-
-    //이전 거리
-    var lastLocation: Location? = null
-
-    //누적 이동 거리
-    var total_distance: Float? = 0.0f
-
-    //누적 이동 시간
-    var total_time: Long = 0
+    var steps: Int = 0
 
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         checkAndRequestPermission()
-        requestLocationPermission()
+       // requestLocationPermission()
 
         // Initialize the SensorManager and Step Counter Sensor
         sensorManager = requireActivity().getSystemService(Context.SENSOR_SERVICE) as SensorManager
         stepCounterSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
+
+        db = AppDataBase.getInstance(requireContext())
+
+        val date = LocalDate.now()
+
+        CoroutineScope(Dispatchers.IO).launch {
+            db.myDataDao.weeklyData(date)
+        }
 
 
     }
@@ -83,7 +97,6 @@ class DailyFragment : Fragment(), SensorEventListener {
         stepCounterSensor?.also { stepCounter ->
             sensorManager.registerListener(this, stepCounter, SensorManager.SENSOR_DELAY_UI)
         }
-        requestLocationUpdates()
 
 
     }
@@ -92,21 +105,26 @@ class DailyFragment : Fragment(), SensorEventListener {
         super.onPause()
         // Unregister the sensor listener to prevent battery drain
         sensorManager.unregisterListener(this)
-        requestLocationUpdates()
     }
 
     //실제 데이터 받는 부분
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onSensorChanged(event: SensorEvent?) {
         event?.let {
             if (it.sensor.type == Sensor.TYPE_STEP_COUNTER) {
                 // Update your UI here with the new step count
-                val steps = it.values[0].toInt()
+                steps = it.values[0].toInt()
 
                 // Use 'steps' variable to update your UI
                 binding.steps.text = steps.toString()
-                binding.progressBar.progress = steps
+                binding.progressBar.progress = steps.toInt()
 
 
+                val sendData : Data = workDataOf(
+                    "steps" to steps
+                )
+
+                workManager(sendData)
 
             }
         }
@@ -136,119 +154,35 @@ class DailyFragment : Fragment(), SensorEventListener {
         }
     }
 
+    fun workManager(data : Data){
 
-    private fun requestLocationPermission() {
-        if (ContextCompat.checkSelfPermission(
-                requireActivity(),
-                android.Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(
-                requireActivity(),
-                arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
-                LOCATION_PERMISSION_REQUEST_CODE
-            )
-        } else {
-            //requestLocationUpdates()
-        }
-    }
+        val workManager = PeriodicWorkRequestBuilder<MyWorkManager>(1, TimeUnit.DAYS) //하루에 한번 실행
+            .setInputData(data) //데이터 보내기
+            .setInitialDelay(calculateInitialDelay(), TimeUnit.MILLISECONDS)
+            .build()
 
-    private fun requestLocationUpdates() {
-
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
-        locationRequest = com.google.android.gms.location.LocationRequest.create().apply {
-            interval = 10000 // Update interval in milliseconds
-            fastestInterval = 5000 // Fastest update interval in milliseconds
-            priority = com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY
-        }
-
-
-        if (ActivityCompat.checkSelfPermission(
-                requireActivity(),
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                requireActivity(),
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-
-        }
-        fusedLocationClient.requestLocationUpdates(
-            locationRequest,
-            locationCallback,
-            Looper.getMainLooper() // Looper can be provided for custom threading
+        WorkManager.getInstance(requireContext()).enqueueUniquePeriodicWork(
+            "mywork",
+            ExistingPeriodicWorkPolicy.REPLACE,
+            workManager
         )
+
     }
+    private fun calculateInitialDelay(): Long {
+        val calendar = Calendar.getInstance()
+        val now = calendar.timeInMillis
+        calendar.set(Calendar.HOUR_OF_DAY, 23)
+        calendar.set(Calendar.MINUTE, 59)
+        calendar.set(Calendar.SECOND, 0)
+        val scheduledTime = calendar.timeInMillis
 
-    //위치정보 update받는 부분
-    private val locationCallback = object : LocationCallback() {
-        override fun onLocationResult(locationResult: LocationResult) {
-            //newLocoation = 현재 위치
-            val newLocation = locationResult.lastLocation
-
-            //현재시간
-            val timestamp = newLocation.time
-
-            if (lastLocation != null) {
-                //두 지점 간의 거리 측정 단위 : meter
-                val distance = lastLocation?.distanceTo(newLocation)
-                val lastTime = lastLocation!!.time
-                var time = (timestamp - lastTime!!) / 1000
-
-                if(lastLocation == newLocation){ //거리 변화가 없으면
-                    time = 0 //시간은 변화없게 하고
-                }
-                total_time = time + time
-
-                if (distance != null) {
-                    total_distance = total_distance?.plus(distance)
-                }
-
-
-                Log.d("changed", distance.toString() + lastTime.toString())
-
-                /* binding.distance.text= "이동거리"+ String.format("%.2f", distance)+ "m"
-                binding.lastTime.text = "이전 시간 : ${beforeTime}"
-                binding.currentTime.text = "현재 시간 : ${nowTime}"
-                binding.duration.text = "이동 시간 : ${time} 초 "
-*/
-
-
-                // 변환
-                var sec = total_time % 60
-                var min = total_time / 60 % 60
-                var hour = total_time / 3600
-
-                //미터를  킬로미터로 변환
-                var distanceKm = total_distance?.div(1000)
-
-                binding.distance.text = "전체이동거리" + String.format("%.3f", distanceKm) + "km"
-                binding.time.text = "전체이동시간 : ${hour}시 + ${min}분 + ${sec}초"
-            }
-            lastLocation = newLocation
+        // 이미 23시 59분을 지났다면 다음 날로 설정합니다.
+        if (scheduledTime < now) {
+            calendar.add(Calendar.DAY_OF_YEAR, 1)
         }
 
+        return calendar.timeInMillis - now
     }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        when (requestCode) {
-            ACTIVITY_RECOGNITION_REQ_CODE -> {
-                if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                    // Permission was granted, proceed with the activity recognition
-                } else {
-                    // Permission denied, you can disable the functionality that depends on this permission or inform the user
-                }
-                return
-            }
-            // Handle other permission requests by checking other request codes
-        }
-    }
-
 
 
 }

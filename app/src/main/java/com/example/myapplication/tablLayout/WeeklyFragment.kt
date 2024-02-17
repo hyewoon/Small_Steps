@@ -23,6 +23,7 @@ class WeeklyFragment : Fragment() {
     ): View? {
        binding = FragmentWeeklyBinding.inflate(inflater)
         return binding.root
+
     }
 
 

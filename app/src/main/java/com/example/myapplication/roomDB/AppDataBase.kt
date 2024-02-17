@@ -4,8 +4,10 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 
 @Database(entities = [MyData::class], version = 1, exportSchema = false)
+@TypeConverters(Converters::class)
  abstract class AppDataBase : RoomDatabase() {
     // DAO 인터페이스를 지정
     abstract val myDataDao : MyDataDao

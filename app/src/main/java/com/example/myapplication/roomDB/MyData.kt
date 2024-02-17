@@ -2,13 +2,14 @@ package com.example.myapplication.roomDB
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.time.LocalDate
+import java.util.Date
 
 @Entity
 data class MyData(
-    @PrimaryKey val date : String,
-    val steps : Int,
-    val distance : Double,
-    val time : Long
+    @PrimaryKey val date : LocalDate,
+    val steps : Int
+
 ){
 
 }
