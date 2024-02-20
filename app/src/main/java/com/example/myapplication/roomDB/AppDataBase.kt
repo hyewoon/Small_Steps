@@ -23,7 +23,7 @@ import androidx.room.TypeConverters
                     instance = Room.databaseBuilder(
                         context.applicationContext,
                         AppDataBase::class.java,
-                        "mydata"
+                        "newone"
                     ).build()
                     INSTANCE = instance
                 }

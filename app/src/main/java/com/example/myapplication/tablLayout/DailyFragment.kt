@@ -23,9 +23,11 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.work.Data
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
+import com.example.myapplication.MyApplication
 import com.example.myapplication.MyWorkManager
 import com.example.myapplication.R
 import com.example.myapplication.databinding.FragmentDailyBinding
@@ -54,39 +56,58 @@ class DailyFragment : Fragment(), SensorEventListener {
     private var stepCounterSensor: Sensor? = null
     private val ACTIVITY_RECOGNITION_REQ_CODE = 100 // Request code for activity recognition
 
-    private lateinit var db: AppDataBase
 
     //걸음 수 측정
     var steps: Int = 0
+    var totalSteps : Int = 0
+    private var initialStepCount: Int? = null // Holds the initial step count
+    private var currentSessionSteps: Int = 0 // Steps taken in the current session
+
 
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         checkAndRequestPermission()
-       // requestLocationPermission()
+        loadData()
+
 
         // Initialize the SensorManager and Step Counter Sensor
         sensorManager = requireActivity().getSystemService(Context.SENSOR_SERVICE) as SensorManager
         stepCounterSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
 
-        db = AppDataBase.getInstance(requireContext())
-
-        val date = LocalDate.now()
-
-        CoroutineScope(Dispatchers.IO).launch {
-            db.myDataDao.weeklyData(date)
-        }
 
 
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View? {
         binding = FragmentDailyBinding.inflate(inflater)
+
+
+
+
+ /*  /    val workManagerA = OneTimeWorkRequestBuilder<MyWorkManager>().build()
+       WorkManager.getInstance(this.requireActivity()).getWorkInfoByIdLiveData(MyWorkManager.id)
+           .observe(this.requireActivity()){ info ->
+               if (info != null && info.state.isFinished) {
+
+                   val result = info.outputData.getInt("results", 1000)
+
+               }
+
+           }
+*/
         return binding.root
+
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        //loadData()
 
 
     }
@@ -96,6 +117,9 @@ class DailyFragment : Fragment(), SensorEventListener {
         // Register the sensor listener
         stepCounterSensor?.also { stepCounter ->
             sensorManager.registerListener(this, stepCounter, SensorManager.SENSOR_DELAY_UI)
+            loadData()
+
+
         }
 
 
@@ -105,36 +129,76 @@ class DailyFragment : Fragment(), SensorEventListener {
         super.onPause()
         // Unregister the sensor listener to prevent battery drain
         sensorManager.unregisterListener(this)
+        saveData()
     }
+
+    override fun onStop() {
+        super.onStop()
+        saveData()
+    }
+
 
     //실제 데이터 받는 부분
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onSensorChanged(event: SensorEvent?) {
         event?.let {
             if (it.sensor.type == Sensor.TYPE_STEP_COUNTER) {
-                // Update your UI here with the new step count
-                steps = it.values[0].toInt()
+                if(initialStepCount == null){
+                    initialStepCount = it.values[0].toInt()
 
-                // Use 'steps' variable to update your UI
-                binding.steps.text = steps.toString()
-                binding.progressBar.progress = steps.toInt()
+                }
+                loadData()
+                // Calculate steps taken since initialStepCount was recorded.
+                currentSessionSteps = it.values[0].toInt() - (initialStepCount ?: 0) // 이 값은 저장되지 않는다.
+                saveData()
+                Log.d("DailyFragment", "saveI " + initialStepCount.toString())
+                Log.d("DailyFragment", "saveC" + currentSessionSteps.toString())
+                loadData()
+                Log.d("DailyFragment", "loadI " + initialStepCount.toString())
+                Log.d("DailyFragment", "loadC " + currentSessionSteps.toString())
+                binding.steps.text = currentSessionSteps.toString()
 
 
                 val sendData : Data = workDataOf(
-                    "steps" to steps
+                    "steps" to currentSessionSteps,
+                    "totalSteps" to initialStepCount
                 )
-
                 workManager(sendData)
 
-            }
+                }
         }
-
 
     }
 
     override fun onAccuracyChanged(p0: Sensor?, p1: Int) {
 
     }
+
+    fun saveData(){
+        MyApplication.prefs.setString("InitialStepCount", (initialStepCount ?: 0))
+        MyApplication.prefs.setString("CurrentSessionSteps", currentSessionSteps)
+    }
+    fun loadData() {
+        val loadInitial =
+            MyApplication.prefs.getString("InitialStepCount", 0).toString().toIntOrNull()
+        val loadCurrent =
+            MyApplication.prefs.getString("CurrentSessionSteps", 0).toString().toIntOrNull()
+        initialStepCount = loadInitial
+          loadCurrent?.let {
+              currentSessionSteps = loadCurrent
+          }
+
+
+
+        // A method to reset the session steps to 0
+        fun resetSessionSteps() {
+            // Reset initialStepCount to null so it will be set again with the next sensor event
+            initialStepCount = null
+            currentSessionSteps = 0
+            // Update your UI here to reflect the reset
+        }
+    }
+
 
     private fun checkAndRequestPermission() {
         context?.let {
@@ -154,7 +218,7 @@ class DailyFragment : Fragment(), SensorEventListener {
         }
     }
 
-    fun workManager(data : Data){
+    private fun workManager(data : Data){
 
         val workManager = PeriodicWorkRequestBuilder<MyWorkManager>(1, TimeUnit.DAYS) //하루에 한번 실행
             .setInputData(data) //데이터 보내기

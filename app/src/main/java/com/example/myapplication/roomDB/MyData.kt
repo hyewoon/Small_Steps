@@ -8,7 +8,8 @@ import java.util.Date
 @Entity
 data class MyData(
     @PrimaryKey val date : LocalDate,
-    val steps : Int
+    val steps : Int,
+    val totalSteps: Int
 
 ){
 
