@@ -24,6 +24,7 @@ class WeeklyFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -33,6 +34,7 @@ class WeeklyFragment : Fragment() {
     ): View? {
         binding = FragmentWeeklyBinding.inflate(inflater)
 
+        //AppDataBase.getInstance(requireActivity()).myDataDao.weeklyData()
         db = AppDataBase.getInstance(this.requireContext())
         val date = LocalDate.now()
 
@@ -41,21 +43,22 @@ class WeeklyFragment : Fragment() {
             val result = db.myDataDao.weeklyData(date)
             binding.apply {
 
-        /*
+                totalSteps.text = result[0].totalSteps.toString()
+
                 proText1.text = result[0].steps.toString()
-                progressBar1.progress = result[1].steps.toInt()
-                proText2.text = result[1].steps.toString()
-                progressBar2.progress = result[1].steps.toInt()
-                proText3.text = result.get(2).steps.toString()
-                progressBar3.progress = result.get(2).steps.toInt()
-                proText4.text = result.get(2).steps.toString()
-                progressBar4.progress = result.get(2).steps.toInt()
-                proText5.text = result.get(3).steps.toString()
-                progressBar5.progress = result.get(3).steps.toInt()
-                proText6.text = result.get(4).steps.toString()
-                progressBar6.progress = result.get(4).steps.toInt()
-                proText7.text = result.get(5).steps.toString()
-                progressBar7.progress = result.get(5).steps.toInt()*/
+                progressBar1.progress = result[0].steps.toInt()
+                /* proText2.text = result[1].steps.toString()
+                 progressBar2.progress = result[1].steps.toInt()
+                 proText3.text = result.get(2).steps.toString()
+                 progressBar3.progress = result.get(2).steps.toInt()
+                 proText4.text = result.get(2).steps.toString()
+                 progressBar4.progress = result.get(2).steps.toInt()
+                 proText5.text = result.get(3).steps.toString()
+                 progressBar5.progress = result.get(3).steps.toInt()
+                 proText6.text = result.get(4).steps.toString()
+                 progressBar6.progress = result.get(4).steps.toInt()
+                 proText7.text = result.get(5).steps.toString()
+                 progressBar7.progress = result.get(5).steps.toInt()*/
             }
         }
         return binding.root

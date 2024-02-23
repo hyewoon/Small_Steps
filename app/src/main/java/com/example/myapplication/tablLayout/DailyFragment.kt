@@ -1,52 +1,34 @@
 package com.example.myapplication.tablLayout
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-import android.location.Location
-import android.location.LocationRequest
+import android.icu.util.LocaleData
 import android.os.Build
 import android.os.Bundle
-import android.os.Looper
-import android.renderscript.RenderScript
+import android.os.LocaleList
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.work.Data
 import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.example.myapplication.MyApplication
 import com.example.myapplication.MyWorkManager
-import com.example.myapplication.R
 import com.example.myapplication.databinding.FragmentDailyBinding
-import com.example.myapplication.roomDB.AppDataBase
-import com.example.myapplication.roomDB.MyData
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY
-import com.google.android.gms.location.LocationResult
-import com.google.android.gms.location.LocationResult.create
-import com.google.android.gms.location.LocationServices
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 class DailyFragment : Fragment(), SensorEventListener {
@@ -72,9 +54,13 @@ class DailyFragment : Fragment(), SensorEventListener {
         loadData()
 
 
+
         // Initialize the SensorManager and Step Counter Sensor
         sensorManager = requireActivity().getSystemService(Context.SENSOR_SERVICE) as SensorManager
         stepCounterSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
+        saveData()
+        Log.d("DailyFragment", "onCreate " + initialStepCount.toString())
+        Log.d("DailyFragment", "onCreate " + initialStepCount.toString())
 
 
 
@@ -86,6 +72,10 @@ class DailyFragment : Fragment(), SensorEventListener {
         savedInstanceState: Bundle?,
     ): View? {
         binding = FragmentDailyBinding.inflate(inflater)
+        val date = LocalDate.now().toString()
+
+        binding.date.text  =date
+
 
 
 
@@ -107,34 +97,45 @@ class DailyFragment : Fragment(), SensorEventListener {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        //loadData()
-
 
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onResume() {
         super.onResume()
+        loadData()
+        saveData()
         // Register the sensor listener
         stepCounterSensor?.also { stepCounter ->
             sensorManager.registerListener(this, stepCounter, SensorManager.SENSOR_DELAY_UI)
-            loadData()
 
+            Log.d("DailyFragment", "onResume " + initialStepCount.toString())
+            Log.d("DailyFragment", "onResume " + initialStepCount.toString())
 
         }
 
 
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onPause() {
         super.onPause()
         // Unregister the sensor listener to prevent battery drain
-        sensorManager.unregisterListener(this)
+        loadData()
         saveData()
+        sensorManager.unregisterListener(this)
+
+        Log.d("DailyFragment", "onPause " + initialStepCount.toString())
+        Log.d("DailyFragment", "onPause " + initialStepCount.toString())
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onStop() {
         super.onStop()
+        loadData()
         saveData()
+        Log.d("DailyFragment", "onStop " + initialStepCount.toString())
+        Log.d("DailyFragment", "onStop " + initialStepCount.toString())
     }
 
 
@@ -145,18 +146,16 @@ class DailyFragment : Fragment(), SensorEventListener {
             if (it.sensor.type == Sensor.TYPE_STEP_COUNTER) {
                 if(initialStepCount == null){
                     initialStepCount = it.values[0].toInt()
-
                 }
-                loadData()
-                // Calculate steps taken since initialStepCount was recorded.
-                currentSessionSteps = it.values[0].toInt() - (initialStepCount ?: 0) // 이 값은 저장되지 않는다.
-                saveData()
-                Log.d("DailyFragment", "saveI " + initialStepCount.toString())
-                Log.d("DailyFragment", "saveC" + currentSessionSteps.toString())
-                loadData()
-                Log.d("DailyFragment", "loadI " + initialStepCount.toString())
-                Log.d("DailyFragment", "loadC " + currentSessionSteps.toString())
+                currentSessionSteps = it.values[0].toInt() - (initialStepCount ?: 0)
                 binding.steps.text = currentSessionSteps.toString()
+                binding.progressBar.progress = currentSessionSteps
+                saveData()
+                Log.d("DailyFragment", "saveData " + initialStepCount.toString())
+                Log.d("DailyFragment", "saveData " + currentSessionSteps)
+                loadData()
+                Log.d("DailyFragment", "loadData " + initialStepCount.toString())
+                Log.d("DailyFragment", "loadData " + currentSessionSteps)
 
 
                 val sendData : Data = workDataOf(
@@ -164,6 +163,7 @@ class DailyFragment : Fragment(), SensorEventListener {
                     "totalSteps" to initialStepCount
                 )
                 workManager(sendData)
+
 
                 }
         }
@@ -174,29 +174,53 @@ class DailyFragment : Fragment(), SensorEventListener {
 
     }
 
-    fun saveData(){
-        MyApplication.prefs.setString("InitialStepCount", (initialStepCount ?: 0))
-        MyApplication.prefs.setString("CurrentSessionSteps", currentSessionSteps)
-    }
-    fun loadData() {
-        val loadInitial =
-            MyApplication.prefs.getString("InitialStepCount", 0).toString().toIntOrNull()
-        val loadCurrent =
-            MyApplication.prefs.getString("CurrentSessionSteps", 0).toString().toIntOrNull()
-        initialStepCount = loadInitial
-          loadCurrent?.let {
-              currentSessionSteps = loadCurrent
-          }
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun saveData(){
 
+        val currentDate = LocalDate.now().toString()
+        MyApplication.prefs.apply {
+            setString("InitialStepCountI", initialStepCount ?: 0)
+            setDate("LastDate", currentDate)
+            Log.d("DailyFragment", "currentDate :" + currentDate )
 
-
-        // A method to reset the session steps to 0
-        fun resetSessionSteps() {
-            // Reset initialStepCount to null so it will be set again with the next sensor event
-            initialStepCount = null
-            currentSessionSteps = 0
-            // Update your UI here to reflect the reset
         }
+        /*val sharedPreferences = requireContext().getSharedPreferences("StepCounterPrefs", Context.MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        editor.putInt("InitialStepCount", initialStepCount ?: 0)
+        editor.apply()*/
+   }
+    @RequiresApi(Build.VERSION_CODES.O)
+    @SuppressLint("SuspiciousIndentation")
+    private fun loadData() {
+        val getInt = MyApplication.prefs.getString("InitialStepCount", 0).toString().toInt()
+            initialStepCount =getInt
+            if (initialStepCount == 0) initialStepCount = null
+
+        val lastDate = MyApplication.prefs.getDate("LastDate", LocalDate.now().toString())
+        val currentDate = LocalDate.now().toString()
+        Log.d("DailyFragment", "currentDate: "+ currentDate + "lastDate :" + lastDate )
+
+        if (lastDate != currentDate) {
+            // It's a new day
+            resetSessionSteps()
+        }
+   /*
+        val sharedPreferences = requireContext().getSharedPreferences("StepCounterPrefs", Context.MODE_PRIVATE)
+        initialStepCount = sharedPreferences.getInt("InitialStepCount", 0)
+        if (initialStepCount == 0) initialStepCount = null // Adjust based on your logic*/
+      }
+
+
+    // A method to reset the session steps to 0
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun resetSessionSteps() {
+        // Reset initialStepCount to null so it will be set again with the next sensor event
+        initialStepCount = null
+        currentSessionSteps = 0
+        binding.steps.text = "0"
+
+        saveData()
+
     }
 
 
@@ -247,6 +271,5 @@ class DailyFragment : Fragment(), SensorEventListener {
 
         return calendar.timeInMillis - now
     }
-
 
 }
