@@ -19,6 +19,8 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Observer
 import androidx.work.Data
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
@@ -26,6 +28,7 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.example.myapplication.MyApplication
 import com.example.myapplication.MyWorkManager
+import com.example.myapplication.SharedVIewModel
 import com.example.myapplication.databinding.FragmentDailyBinding
 import java.time.LocalDate
 import java.util.Calendar
@@ -34,13 +37,13 @@ import java.util.concurrent.TimeUnit
 class DailyFragment : Fragment(), SensorEventListener {
 
     private lateinit var binding: FragmentDailyBinding
+    private val viewModel: SharedVIewModel by activityViewModels()
     private lateinit var sensorManager: SensorManager
     private var stepCounterSensor: Sensor? = null
     private val ACTIVITY_RECOGNITION_REQ_CODE = 100 // Request code for activity recognition
 
 
     //걸음 수 측정
-    var steps: Int = 0
     var totalSteps : Int = 0
     private var initialStepCount: Int? = null // Holds the initial step count
     private var currentSessionSteps: Int = 0 // Steps taken in the current session
@@ -62,8 +65,6 @@ class DailyFragment : Fragment(), SensorEventListener {
         Log.d("DailyFragment", "onCreate " + initialStepCount.toString())
         Log.d("DailyFragment", "onCreate " + initialStepCount.toString())
 
-
-
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -74,8 +75,14 @@ class DailyFragment : Fragment(), SensorEventListener {
         binding = FragmentDailyBinding.inflate(inflater)
         val date = LocalDate.now().toString()
 
-        binding.date.text  =date
+        binding.date.text = date
+        //viewModeldml 값 가져오기
+        binding.targetSteps.text = MyApplication.prefs.getString("target",0)
+        binding.progressBar.max = MyApplication.prefs.getString("target", 0).toString().toInt()
 
+     /*  viewModel.getTarget().observe(viewLifecycleOwner, Observer {
+           binding.targetSteps.text = it.toString()
+        })*/
 
 
 
@@ -97,6 +104,7 @@ class DailyFragment : Fragment(), SensorEventListener {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
 
     }
 
@@ -148,8 +156,13 @@ class DailyFragment : Fragment(), SensorEventListener {
                     initialStepCount = it.values[0].toInt()
                 }
                 currentSessionSteps = it.values[0].toInt() - (initialStepCount ?: 0)
-                binding.steps.text = currentSessionSteps.toString()
                 binding.progressBar.progress = currentSessionSteps
+                viewModel.setSteps(currentSessionSteps)
+
+                //데이터 가져오기
+                viewModel.getSteps().observe(viewLifecycleOwner, Observer {
+                    binding.steps.text = it.toString()
+                })
                 saveData()
                 Log.d("DailyFragment", "saveData " + initialStepCount.toString())
                 Log.d("DailyFragment", "saveData " + currentSessionSteps)
@@ -163,8 +176,6 @@ class DailyFragment : Fragment(), SensorEventListener {
                     "totalSteps" to initialStepCount
                 )
                 workManager(sendData)
-
-
                 }
         }
 
@@ -181,7 +192,7 @@ class DailyFragment : Fragment(), SensorEventListener {
         MyApplication.prefs.apply {
             setString("InitialStepCountI", initialStepCount ?: 0)
             setDate("LastDate", currentDate)
-            Log.d("DailyFragment", "currentDate :" + currentDate )
+          //  Log.d("DailyFragment", "currentDate :" + currentDate )
 
         }
         /*val sharedPreferences = requireContext().getSharedPreferences("StepCounterPrefs", Context.MODE_PRIVATE)
@@ -198,7 +209,7 @@ class DailyFragment : Fragment(), SensorEventListener {
 
         val lastDate = MyApplication.prefs.getDate("LastDate", LocalDate.now().toString())
         val currentDate = LocalDate.now().toString()
-        Log.d("DailyFragment", "currentDate: "+ currentDate + "lastDate :" + lastDate )
+      //  Log.d("DailyFragment", "currentDate: "+ currentDate + "lastDate :" + lastDate )
 
         if (lastDate != currentDate) {
             // It's a new day
@@ -217,7 +228,6 @@ class DailyFragment : Fragment(), SensorEventListener {
         // Reset initialStepCount to null so it will be set again with the next sensor event
         initialStepCount = null
         currentSessionSteps = 0
-        binding.steps.text = "0"
 
         saveData()
 

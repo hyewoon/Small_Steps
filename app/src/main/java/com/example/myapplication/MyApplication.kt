@@ -3,10 +3,13 @@ package com.example.myapplication
 import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
+import kotlin.properties.Delegates
 
+//여러fragement에 걸쳐 사용되는 전역변수 or 메소드
 class MyApplication : Application() {
     companion object {
         lateinit var prefs: PreferenceUtil
+
     }
 
     override fun onCreate() {
@@ -14,8 +17,6 @@ class MyApplication : Application() {
         super.onCreate()
     }
 }
-
-
 
 class PreferenceUtil(applicationContext: Context) {
     private val pref : SharedPreferences = applicationContext.getSharedPreferences("nowSteps", Context.MODE_PRIVATE)
@@ -42,6 +43,8 @@ class PreferenceUtil(applicationContext: Context) {
     fun getDate(key: String, defValue: String): String {
         return pref.getString(key, defValue).toString()
     }
+
+
 
 
 }
