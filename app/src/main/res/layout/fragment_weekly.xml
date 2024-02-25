@@ -180,19 +180,21 @@
         android:layout_marginStart="10dp"
         />
 
-    <ProgressBar
-        android:id="@+id/progressBar7"
-        android:layout_width="35dp"
-        android:layout_height="300dp"
-        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-        android:progressDrawable="@drawable/bar_type_progress_bar"
-        app:layout_constraintStart_toEndOf="@id/progressBar6"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/progressBar1"
-       app:layout_constraintBottom_toTopOf="@id/bottomView"
-        android:layout_marginStart="10dp"
-        android:layout_marginEnd="20dp"
-        />
+ <ProgressBar
+     android:id="@+id/progressBar7"
+     style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+     android:layout_width="35dp"
+     android:layout_height="300dp"
+     android:layout_marginStart="10dp"
+     android:layout_marginEnd="20dp"
+     android:max="100"
+     android:progressDrawable="@drawable/changed_progress"
+     app:layout_constraintBottom_toTopOf="@id/bottomView"
+     app:layout_constraintEnd_toEndOf="parent"
+     app:layout_constraintStart_toEndOf="@id/progressBar6"
+     app:layout_constraintTop_toTopOf="@id/progressBar1"
+     app:layout_constraintVertical_bias="0.508" />
+
  <View android:id="@+id/bottomView"
      android:layout_width="match_parent"
      android:layout_height="50dp"

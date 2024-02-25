@@ -77,8 +77,8 @@ class DailyFragment : Fragment(), SensorEventListener {
 
         binding.date.text = date
         //viewModeldml 값 가져오기
-        binding.targetSteps.text = MyApplication.prefs.getString("target",0)
-        binding.progressBar.max = MyApplication.prefs.getString("target", 0).toString().toInt()
+        binding.targetSteps.text = MyApplication.prefs.getString("target", 0)
+
 
      /*  viewModel.getTarget().observe(viewLifecycleOwner, Observer {
            binding.targetSteps.text = it.toString()
@@ -155,14 +155,24 @@ class DailyFragment : Fragment(), SensorEventListener {
                 if(initialStepCount == null){
                     initialStepCount = it.values[0].toInt()
                 }
-                currentSessionSteps = it.values[0].toInt() - (initialStepCount ?: 0)
+                //load
+                Log.d("DailyFragment", "firstLoad " + currentSessionSteps)
+                currentSessionSteps = it.values[0].toInt() - (initialStepCount ?: 0 )
+                 currentSessionSteps = currentSessionSteps - 2374
+                binding.steps.text = currentSessionSteps.toString()
                 binding.progressBar.progress = currentSessionSteps
-                viewModel.setSteps(currentSessionSteps)
+                Log.d("DailyFragment", "second " + currentSessionSteps)
+                Log.d("DailyFragment", ("second " + initialStepCount ?: 0) as String)
+                //save
+                MyApplication.prefs.setString("currentSteps",currentSessionSteps )
+
+
 
                 //데이터 가져오기
-                viewModel.getSteps().observe(viewLifecycleOwner, Observer {
+               /* viewModel.getSteps().observe(viewLifecycleOwner, Observer {
                     binding.steps.text = it.toString()
-                })
+                })*/
+               // binding.steps.text = MyApplication.prefs.getString("currentSteps", 0)
                 saveData()
                 Log.d("DailyFragment", "saveData " + initialStepCount.toString())
                 Log.d("DailyFragment", "saveData " + currentSessionSteps)
@@ -228,6 +238,10 @@ class DailyFragment : Fragment(), SensorEventListener {
         // Reset initialStepCount to null so it will be set again with the next sensor event
         initialStepCount = null
         currentSessionSteps = 0
+        //save
+        MyApplication.prefs.setString("currentSteps",currentSessionSteps)
+        binding.steps.text = MyApplication.prefs.getString("currentSteps", 0)
+
 
         saveData()
 

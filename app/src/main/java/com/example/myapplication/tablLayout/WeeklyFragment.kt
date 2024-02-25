@@ -2,6 +2,7 @@ package com.example.myapplication.tablLayout
 
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -10,6 +11,7 @@ import android.widget.SeekBar
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Observer
+import com.example.myapplication.MyApplication
 import com.example.myapplication.R
 import com.example.myapplication.SharedVIewModel
 import com.example.myapplication.databinding.FragmentWeeklyBinding
@@ -37,9 +39,8 @@ class WeeklyFragment : Fragment() {
         savedInstanceState: Bundle?,
     ): View? {
         binding = FragmentWeeklyBinding.inflate(inflater)
-        viewModel.getSteps().observe(viewLifecycleOwner, Observer {
-            binding.totalSteps.text = it.toString()
-        })
+
+
 
         //AppDataBase.getInstance(requireActivity()).myDataDao.weeklyData()
         db = AppDataBase.getInstance(this.requireContext())
@@ -54,18 +55,19 @@ class WeeklyFragment : Fragment() {
 
                 proText1.text = result[0].steps.toString()
                 progressBar1.progress = result[0].steps.toInt()
+               // progressBar1.max = 9000
                  proText2.text = result[1].steps.toString()
                  progressBar2.progress = result[1].steps.toInt()
-                 /*oText3.text = result.get(2).steps.toString()
+                proText3.text = result.get(2).steps.toString()
                  progressBar3.progress = result.get(2).steps.toInt()
-                 proText4.text = result.get(2).steps.toString()
-                 progressBar4.progress = result.get(2).steps.toInt()
-                 proText5.text = result.get(3).steps.toString()
-                 progressBar5.progress = result.get(3).steps.toInt()
-                 proText6.text = result.get(4).steps.toString()
-                 progressBar6.progress = result.get(4).steps.toInt()
-                 proText7.text = result.get(5).steps.toString()
-                 progressBar7.progress = result.get(5).steps.toInt()*/
+                /*proText4.text = result.get(2).steps.toString()
+               progressBar4.progress = result.get(2).steps.toInt()
+               proText5.text = result.get(3).steps.toString()
+               progressBar5.progress = result.get(3).steps.toInt()
+               proText6.text = result.get(4).steps.toString()
+               progressBar6.progress = result.get(4).steps.toInt()
+               proText7.text = result.get(5).steps.toString()
+               progressBar7.progress = result.get(5).steps.toInt()*/
             }
         }
         return binding.root

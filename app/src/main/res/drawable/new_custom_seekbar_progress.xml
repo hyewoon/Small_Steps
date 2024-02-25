@@ -1,15 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:id="@+id/background"
-        android:drawable="@drawable/bg_progress"/>
-
-    <item
-        android:id="@+id/progress">
+        android:id="@android:id/background"
+        android:drawable="@drawable/custom_seekbar"/>
+    <item android:id="@android:id/progress">
         <scale
-            android:drawable="@drawable/bg_progress"
+            android:drawable="@drawable/custom_bg_seekbar"
             android:scaleHeight="10%"
-            android:scaleWidth="100%"
-            />
+            android:scaleWidth="100%" />
     </item>
 </layer-list>
