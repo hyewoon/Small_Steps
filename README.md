@@ -1,8 +1,8 @@
 # 수정된 small_steps입니다.
 </br>
-* 자동으로 걸음수를 측정하는 앱</br>
-* 자정이 되면 값이 리셋됨</br>
-* 목표 걸음 수를 설정할 수 있음</br>
+*  자동으로 걸음수를 측정하는 앱</br>
+*  자정이 되면 값이 리셋됨</br>
+*  목표 걸음 수를 설정할 수 있음</br>
 
 * 프로젝트 상세 설명 </br>
 https://velog.io/@likethe/projectsmallsteps-App
