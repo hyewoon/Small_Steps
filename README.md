@@ -2,7 +2,8 @@
 </br>
 </br>
 </br>
-![Screenshot_20240308-220648_New_small_steps](https://github.com/hyewoon/Small_Steps/assets/113662682/78dabacb-63d0-424c-9dca-fdc8e7ca72ca)
+
+<image src="(https://github.com/hyewoon/Small_Steps/assets/113662682/78dabacb-63d0-424c-9dca-fdc8e7ca72ca" heigth="100" width="80%">
 
 ![Screenshot_20240308-165350_New_small_steps](https://github.com/hyewoon/Small_Steps/assets/113662682/53448313-db2a-40ed-ab78-839bbdec1b8d)
 
