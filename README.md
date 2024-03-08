@@ -15,6 +15,7 @@ https://velog.io/@likethe/projectsmallsteps-App
 <image src="https://github.com/hyewoon/Small_Steps/assets/113662682/fb2a1fa9-2289-4690-9bef-5e464cd8c841" heigth="500" width="500"></br>
 
 </br>
+
 ### ✔️ 자동걸음 수 측정 : Sensor TYPE_STEP_COUNTER
 
 - 매일 오늘의 걸음 수 측정하기 위해 TYPE_STEP_COUNTER 수정 하여 사용
