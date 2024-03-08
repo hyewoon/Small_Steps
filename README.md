@@ -1,1 +1,14 @@
-수정된 small_steps를 만나볼 수 있습니다. 
+수정된 small_steps입니다.
+</br>
+</br>
+</br>
+![Screenshot_20240308-220648_New_small_steps](https://github.com/hyewoon/Small_Steps/assets/113662682/78dabacb-63d0-424c-9dca-fdc8e7ca72ca)
+
+![Screenshot_20240308-165350_New_small_steps](https://github.com/hyewoon/Small_Steps/assets/113662682/53448313-db2a-40ed-ab78-839bbdec1b8d)
+
+![Screenshot_20240308-220707_New_small_steps](https://github.com/hyewoon/Small_Steps/assets/113662682/fb2a1fa9-2289-4690-9bef-5e464cd8c841)
+
+
+
+
+
