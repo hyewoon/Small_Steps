@@ -126,9 +126,10 @@
         android:thumb="@drawable/custom_seekbar_thumb"
         android:thumbOffset="12dp"
         android:translationX="-160dp"
-        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="@id/sunday"/>
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="@id/sunday"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <SeekBar
         android:id="@+id/seekbar_mon"
@@ -143,7 +144,7 @@
         android:splitTrack="false"
         android:thumb="@drawable/custom_seekbar_thumb"
         android:thumbOffset="12dp"
-        android:translationX="-100dp"
+        android:translationX="-110dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@id/sunday"/>
@@ -161,7 +162,7 @@
         android:splitTrack="false"
         android:thumb="@drawable/custom_seekbar_thumb"
         android:thumbOffset="12dp"
-        android:translationX="-65dp"
+        android:translationX="-55dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@id/sunday"/>
@@ -181,7 +182,7 @@
         android:splitTrack="false"
         android:thumb="@drawable/custom_seekbar_thumb"
         android:thumbOffset="12dp"
-        android:translationX="-5dp"
+        android:translationX="0dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@id/sunday"/>
@@ -199,7 +200,7 @@
         android:splitTrack="false"
         android:thumb="@drawable/custom_seekbar_thumb"
         android:thumbOffset="12dp"
-        android:translationX="55dp"
+        android:translationX="60dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@id/sunday"/>
@@ -216,7 +217,7 @@
         android:splitTrack="false"
         android:thumb="@drawable/custom_seekbar_thumb"
         android:thumbOffset="12dp"
-        android:translationX="112dp"
+        android:translationX="110dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@id/sunday"/>
@@ -233,7 +234,7 @@
         android:splitTrack="false"
         android:thumb="@drawable/custom_seekbar_thumb"
         android:thumbOffset="12dp"
-        android:translationX="170dp"
+        android:translationX="160dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@id/sunday"/>

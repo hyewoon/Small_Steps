@@ -18,7 +18,6 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.work.Data
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
@@ -26,24 +25,31 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.example.new_small_steps.MyApplication
 import com.example.new_small_steps.MyWorkManager
-import com.example.new_small_steps.R
 import com.example.new_small_steps.databinding.FragmentDailyBinding
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
 
 class DailyFragment : Fragment(),SensorEventListener {
+    private lateinit var context: Context
     private lateinit var binding: FragmentDailyBinding
     private lateinit var sensorManager: SensorManager
     private var stepCounterSensor: Sensor? = null
-
+    private lateinit var viewModel: StepCounterViewModel
     private val ACTIVITY_RECOGNITION_REQ_CODE = 100 // Request code for activity recognition
 
     private var initialStepCount: Int? = null // Holds the initial step count
     private var currentSessionSteps: Int = 0 // Steps taken in the current session
-    private var steps : Int = 0
+    private var previousSteps : Int = 0
+    private var steps = 0
+    private var isStepsChanged : Boolean = false
+
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        this.context = context
+    }
 
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -52,6 +58,15 @@ class DailyFragment : Fragment(),SensorEventListener {
         checkAndRequestPermission()
         loadData()
         saveData()
+        Log.d("DailyFragment", "onCreate$currentSessionSteps")
+
+        currentSessionSteps = MyApplication.prefs.getString("currentSteps", 0).toString().toInt()
+        //변경사항 또 저장
+        MyApplication.prefs.setString("currentSteps", +currentSessionSteps)
+        Log.d("DailyFragment", "onCreate$currentSessionSteps")
+        Log.d("DailyFragment", "onCreate$initialStepCount")
+
+
 
         //fragmentdptj sensor 사용하려면 앞에 requireActivity() 붙여야
         sensorManager = requireActivity().getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -67,7 +82,6 @@ class DailyFragment : Fragment(),SensorEventListener {
         } else {
             sensorManager.registerListener(this, stepCounterSensor, SensorManager.SENSOR_DELAY_UI)
         }
-
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -77,12 +91,21 @@ class DailyFragment : Fragment(),SensorEventListener {
     ): View? {
         // Inflate the layout for this fragment
         binding = FragmentDailyBinding.inflate(layoutInflater)
+        saveData()
+        loadData()
         val date = LocalDate.now().toString()
 
         binding.date.text = date
         binding.targetSteps.text = MyApplication.prefs.getString("target", 0)
         binding.progressBar.max =  MyApplication.prefs.getString("target", 0).toString().toInt()
+
         return binding.root
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
     }
 
     private fun checkAndRequestPermission() {
@@ -107,80 +130,128 @@ class DailyFragment : Fragment(),SensorEventListener {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onStop() {
         super.onStop()
-        //loadData
-       currentSessionSteps = MyApplication.prefs.getString("currentSteps", 0).toString().toInt()
-        //변경사항 또 저장
-        MyApplication.prefs.setString("currentSteps",currentSessionSteps )
+        stepCounterSensor?.also { step ->
+           sensorManager.registerListener(this, step, SensorManager.SENSOR_DELAY_FASTEST)
+            loadData()
+            saveData()
 
-        binding.steps.text = currentSessionSteps.toString()
-        Log.d("DailyFragment", "onStop current$currentSessionSteps")
+            currentSessionSteps = MyApplication.prefs.getString("currentSteps", 0).toString().toInt()
+            //변경사항 또 저장
+            MyApplication.prefs.setString("currentSteps",currentSessionSteps )
 
+            binding.steps.text = currentSessionSteps.toString()
+            Log.d("DailyFragment", "onStop current$currentSessionSteps")
+
+        }
+
+
+
+
+      /*  stepCounterSensor?.also { step ->
+            sensorManager.registerListener(this, step, SensorManager.SENSOR_DELAY_UI)
+        }*/
 
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onPause() {
         super.onPause()
-        sensorManager.unregisterListener(this)
+     sensorManager.unregisterListener(this)
         loadData()
         saveData()
+        currentSessionSteps = MyApplication.prefs.getString("currentSteps", 0).toString().toInt()
+        //변경사항 또 저장
+        MyApplication.prefs.setString("currentSteps",currentSessionSteps )
+
 
 
     }
+
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onResume() {
         super.onResume()
         stepCounterSensor?.also { step ->
-            sensorManager.registerListener(this, step, SensorManager.SENSOR_DELAY_UI)
+            sensorManager.registerListener(this, step, SensorManager.SENSOR_DELAY_FASTEST)
             loadData()
             saveData()
+            currentSessionSteps = MyApplication.prefs.getString("currentSteps", 0).toString().toInt()
+            //변경사항 또 저장
+            MyApplication.prefs.setString("currentSteps",currentSessionSteps )
+
+            binding.steps.text = currentSessionSteps.toString()
+            Log.d("DailyFragment", "onResume current$currentSessionSteps")
         }
 
     }
 
+
     @RequiresApi(Build.VERSION_CODES.O)
     @SuppressLint("SuspiciousIndentation")
     override fun onSensorChanged(event: SensorEvent?) {
-        event?.let {
-            if (it.sensor.type == Sensor.TYPE_STEP_COUNTER) {
-                if(initialStepCount == null){
-                    initialStepCount = it.values[0].toInt()
+        if(isStepsChanged){
+            event?.let {
+                if (event.sensor.type == Sensor.TYPE_STEP_COUNTER) {
+                    initialStepCount = event.values[0].toInt()
+                    Log.d("DailyFragment", "onSensorChanged $initialStepCount")
                 }
-
-                // Calculate steps taken since initialStepCount was recorded.
-                currentSessionSteps = it.values[0].toInt() - (initialStepCount ?: 0)
-                Log.d("DailyFragment", "initialStepCount: $initialStepCount")
-                Log.d("DailyFragment", "currentSessionSteps: $currentSessionSteps")
-
-                binding.steps.text = currentSessionSteps.toString()
+                currentSessionSteps =event.values[0].toInt()- previousSteps
+                Log.d("DailyFragment", "previousSteps $previousSteps")
+                Log.d("DailyFragment", "currentSessionSteps $currentSessionSteps")
                 binding.progressBar.progress = currentSessionSteps
-                //saveData
-                MyApplication.prefs.setString("currentSteps",currentSessionSteps )
-                Log.d("DailyFragment", "onSensorChanged$currentSessionSteps")
+                binding.steps.text = currentSessionSteps.toString()
+
+
+                loadData()
+                saveData()
+
+
+                MyApplication.prefs.setString("currentSteps", currentSessionSteps)
                 saveData()
                 loadData()
 
-                var totalSteps = 0
-                if(steps == 0){
-                    totalSteps = currentSessionSteps + steps
-                    steps = currentSessionSteps
-                }else{
-                    totalSteps = currentSessionSteps + steps
-                }
-
-
-                //데이터 보내기
-                val sendData : Data = workDataOf(
-                    "steps" to currentSessionSteps,
-                    "totalSteps" to totalSteps
-                )
-                workManager(sendData)
-
-
 
             }
-    }
+            return
+        }else{
+            event?.let {
+                if (event.sensor.type == Sensor.TYPE_STEP_COUNTER) {
+                    initialStepCount = event.values[0].toInt()
+                    Log.d("DailyFragment", "onSensorChanged $initialStepCount")
+                }
+                previousSteps =30191
+                currentSessionSteps =event.values[0].toInt()- previousSteps
+                Log.d("DailyFragment", "previousSteps $previousSteps")
+                Log.d("DailyFragment", "currentSessionSteps $currentSessionSteps")
+                binding.progressBar.progress = currentSessionSteps
+                binding.steps.text = currentSessionSteps.toString()
+
+                loadData()
+                saveData()
+
+                MyApplication.prefs.setString("currentSteps", currentSessionSteps)
+                saveData()
+                loadData()
+
+            }
+            return
+        }
+
+
+        var totalSteps = 0
+        if (steps == 0) {
+            totalSteps = currentSessionSteps + steps
+            steps = currentSessionSteps
+        } else {
+            totalSteps = currentSessionSteps + steps
+        }
+
+        //데이터 보내기
+        val sendData: Data = workDataOf(
+            "steps" to currentSessionSteps,
+            "totalSteps" to totalSteps
+        )
+        workManager(sendData)
 
 }
 
@@ -211,7 +282,7 @@ override fun onAccuracyChanged(p0: Sensor?, p1: Int) {
     private fun loadData() {
         val getInt = MyApplication.prefs.getString("InitialStepCount", 0).toString().toInt()
         initialStepCount =getInt
-        if (initialStepCount == 0) initialStepCount = null
+       // if (initialStepCount == 0) initialStepCount = null
 
         val lastDate = MyApplication.prefs.getDate("LastDate", LocalDate.now().toString())
         val currentDate = LocalDate.now().toString()
@@ -234,30 +305,40 @@ override fun onAccuracyChanged(p0: Sensor?, p1: Int) {
     @RequiresApi(Build.VERSION_CODES.O)
     private fun resetSessionSteps() {
         // Reset initialStepCount to null so it will be set again with the next sensor event
+        previousSteps = initialStepCount!!
         initialStepCount = null
         currentSessionSteps = 0
+       isStepsChanged = true
+
+       /*
+       * if
+       * initialStepCount = 23390 + 119 = 23,509
+       * currentStep 119 +
+       * */
         //save
         MyApplication.prefs.setString("currentSteps",currentSessionSteps)
-      //  binding.steps.text = MyApplication.prefs.getString("currentSteps", 0)
-
+        binding.steps.text = currentSessionSteps.toString()
         saveData()
 
     }
 
 
     private fun workManager(data: Data) {
+        if(context != null){
+            val workManager = PeriodicWorkRequestBuilder<MyWorkManager>(1, TimeUnit.DAYS) //하루에 한번 실행
+                .setInputData(data) //데이터 보내기
+                .setInitialDelay(calculateInitialDelay(), TimeUnit.MILLISECONDS)
+                .build()
 
-        val workManager = PeriodicWorkRequestBuilder<MyWorkManager>(1, TimeUnit.DAYS) //하루에 한번 실행
-            .setInputData(data) //데이터 보내기
-            .setInitialDelay(calculateInitialDelay(), TimeUnit.MILLISECONDS)
-            .build()
+
+            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+                "mywork",
+                ExistingPeriodicWorkPolicy.REPLACE,
+                workManager
+            )
+        }
 
 
-        WorkManager.getInstance(requireContext()).enqueueUniquePeriodicWork(
-            "mywork",
-            ExistingPeriodicWorkPolicy.REPLACE,
-            workManager
-        )
     }
 
     }
