@@ -68,7 +68,6 @@ https://velog.io/@likethe/projectsmallsteps-App
 ###  ✔️ 매일 자정 걸음수를 저장함 : workManager
   * workManager 이용하여 db에 값을 저장 
   
-
 📌 workManager 
 ```kotlin
 class MyWorkManager(context : Context, workerParameters: WorkerParameters) : Worker(context, workerParameters) {
