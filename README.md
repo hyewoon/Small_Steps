@@ -6,7 +6,7 @@
   * 목표 걸음수를 정할 수 있음</br>
   (주간, 월간 측정값을 보여주는 화면 및 기록 공유 기능을 추가하려 합니다.)  
 
-### 프로젝트 상세 설명 </br>
+### 블로그 </br>
 https://velog.io/@likethe/projectsmallsteps-App
 </br>
 </br>
