@@ -93,7 +93,7 @@ class MyWorkManager(context : Context, workerParameters: WorkerParameters) : Wor
 ```
 
 # 🔗 프로젝트를 통해 배운점
- ### 📌 Activity 및 fragment 생명주기의 중요성
+ ### 📌 Activity 및 fragment 생명주기의 중요성에 대해 알게 되었습니다.
 기존에 만들었던 앱은 사용자가 입력한 값을 intent 또는 bundle에 담아 전달하면 되었기에 onCreate()또는 onCreateView()에서 작업하는 것만으로 충분했습니다. 
   
   하지만 Sensor 를 통해 전달되는 실시간으로 변하는 값을 보여주기 위해서는 다른 생명주기에 대해 이해해야 했습니다. 
