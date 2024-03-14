@@ -28,6 +28,7 @@ class ResultFragment : Fragment() {
     ): View? {
         // Inflate the layout for this fragment
         binding = FragmentResultBinding.inflate(layoutInflater)
+        db = AppDataBase.getInstance(this.requireActivity())
 
         val target = MyApplication.prefs.getString("target", 0).toString().toInt()
         binding.apply {
@@ -40,15 +41,12 @@ class ResultFragment : Fragment() {
             seekbarSat.max = target
         }
 
-        binding.seekbarFri.progress = MyApplication.prefs.getString("currentSteps", 0).toString().toInt()
-        binding.weeklySteps.text = MyApplication.prefs.getString("currentSteps",0).toString()
-
-        db = AppDataBase.getInstance(this.requireActivity())
-
         CoroutineScope(Dispatchers.IO).launch {
-          //  binding.weeklySteps.text = db.myDataDao.getAllData()[0].total_steps.toString()
-            //binding.seekbarSun.progress = db.myDataDao.getWeeklyData()[0].toString().toInt()
+            binding.weeklySteps.text = db.myDataDao.getAllData()[8].total_steps.toString()
+            binding.seekbarFri.progress =db.myDataDao.getAllData()[8].total_steps.toString().toInt()
+
         }
+
 
         return binding.root
     }
